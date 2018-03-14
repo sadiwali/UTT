@@ -1,0 +1,14 @@
+vendor_name = ModelSim
+source_file = 1, /courses/courses/cscb58w18/walisadi/FinalProj.v
+source_file = 1, /courses/courses/cscb58w18/walisadi/db/FinalProj.cbx.xml
+design_name = FinalProj
+instance = comp, \LEDR[0]~output , LEDR[0]~output, FinalProj, 1
+instance = comp, \LEDR[1]~output , LEDR[1]~output, FinalProj, 1
+instance = comp, \LEDR[2]~output , LEDR[2]~output, FinalProj, 1
+instance = comp, \LEDR[3]~output , LEDR[3]~output, FinalProj, 1
+instance = comp, \LEDR[4]~output , LEDR[4]~output, FinalProj, 1
+instance = comp, \LEDR[5]~output , LEDR[5]~output, FinalProj, 1
+instance = comp, \LEDR[6]~output , LEDR[6]~output, FinalProj, 1
+instance = comp, \LEDR[7]~output , LEDR[7]~output, FinalProj, 1
+instance = comp, \LEDR[8]~output , LEDR[8]~output, FinalProj, 1
+instance = comp, \LEDR[9]~output , LEDR[9]~output, FinalProj, 1

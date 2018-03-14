@@ -1,0 +1,7 @@
+
+
+module FinalProj(output [9:0] LEDR);
+	assign LEDR[1] = 1'b1;
+
+
+endmodule

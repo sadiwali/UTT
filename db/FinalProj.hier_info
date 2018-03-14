@@ -1,0 +1,13 @@
+|FinalProj
+LEDR[0] <= <GND>
+LEDR[1] <= <VCC>
+LEDR[2] <= <GND>
+LEDR[3] <= <GND>
+LEDR[4] <= <GND>
+LEDR[5] <= <GND>
+LEDR[6] <= <GND>
+LEDR[7] <= <GND>
+LEDR[8] <= <GND>
+LEDR[9] <= <GND>
+
+
