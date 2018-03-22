@@ -1,151 +1,125 @@
 
 
-module FinalProj(output [17:0] LEDR, input [17:0] SW, input CLOCK50, input [3:0] KEY, output reg [7:0] HEX1, output reg [7:0] HEX0);
+module UTT(output [17:0] LEDR, input [17:0] SW, input CLOCK_50, input [3:0] KEY, output [7:0] HEX1, output [7:0] HEX0);
 	
-	single_lane sl(SW, CLOCK50, KEY, LEDR,);
+	single_lane sl(SW, CLOCK_50, LEDR, KEY, HEX1, HEX0);
 
 
 endmodule
 
 // this is a single lane test
-module single_lane (SW, clk, KEY, LEDR, HEXA, HEXB);
-	input [17:0] SW;
-	input clk;
-	input [3:0] KEY;
-	output [17:0] LEDR;
-	output [7:0] HEXA, HEXB;
+
+
+module single_lane (
+		input [13:0] SW,
+		input clk,
+		output [17:0] LEDR,
+		input [3:0] KEY,
+		output [7:0] HEX1,
+		output [7:0] HEX0
+	);
 	
-	// game reset
-	wire reset = 0;
-	wire resetsw = 0;
-	assign resetsw = SW[1];
-
-	// mem is not changed
-	reg [99:0] lane_mem = 100'b0010100001000010000000000000000010000000010000000101000000000000000001001000001000000000000000000000;
-
-	// a lane represents a lane of notes, right shifted on every rate clock
-	reg [99:0] lane;
-
-	// for storing the score (max is 31)
-	wire [4:0] score = 5'd0;
+	/********************************************************************************* variables */
+	// a lane represents a lane of notes
+	reg[499:0] lane_mem = 500'b01100010100100001001000001001000010000000100000001000000010000101000010010000000100010000000011000000110001010010000100100000100100001000000010000000100000001000010100001001000000010001000000001100000011000101001000010010000010010000100000001000000010000000100001010000100100000001000100000000110000001100010100100001001000001001000010000000100000001000000010000101000010010000000100010000000011000000110001010010000100100000100100001000000010000000100000001000010100001001000000010001000000001100000;
+	reg [499:0] lane = 500'b01100010100100001001000001001000010000000100000001000000010000101000010010000000100010000000011000000110001010010000100100000100100001000000010000000100000001000010100001001000000010001000000001100000011000101001000010010000010010000100000001000000010000000100001010000100100000001000100000000110000001100010100100001001000001001000010000000100000001000000010000101000010010000000100010000000011000000110001010010000100100000100100001000000010000000100000001000010100001001000000010001000000001100000;
+	// storing the score
+	reg [5:0] score0 = 5'b00000;
 	
-	// note movement clock
-	wire out_clk;
-
+	// ahex_displayssign running state to switch 0, 1 for running, 0 for paused
+	assign running = SW[0];
+	
+	// assign leds to display the las 10 bits of the lane only
+	assign LEDR [9:0] = lane [9:0];
+	
 	// assign lane1 input to key 3
-	assign l1 = KEY[3];
-	
-	// program is running or paused
-	wire running = 0;
-	assign running = SW[0];  
-	
-	
-	// assign leds to display the last 10 bits of the lane only
-	assign LEDR [9:0] = lane[9:0];
+	assign l1_inp = SW[1];
 
-
-	// initialize the game
-	initial begin
-		// copy lane from memory to current game
-		lane = lane_mem;
-	end
-
+	// display the score
+	score_display score_hex(score0, HEX1, HEX0);
 	
-	// on the 1 second clock, shift the register right ( move notes along lane )
-	always@(posedge out_clk, posedge resetsw) begin	
-		// if reset, reset
-		if (resetsw) begin
-			reset = 1;
-			lane = lane_mem;
-		end
+	assign LEDR[17] = running;
+	assign LEDR[16] = clk_out;
 	
-		// if the game us running
-		if (running)
-			begin
-				// shift the bits
-				lane = 1 >> lane;
-			end
-	end
-	
-	
-	
-	// module declarations
-	note_rate_div nrd(clk, 25d'd10000000 , reset, out_clk); 
-	tap_detect lane1tap(l1, running, reset, score);
-	score_display(score, HEXA, HEXB);
-	
-	
-endmodule
-
-
-module tap_detect(inp, running, reset, score);
-	input inp;  // switch input from user
-	input running;  // if game is running
-	input reset;  // reset switch resets score
-	output reg [4:0] score;  // score
-	
-	wire keyenable = 1;  // for disabling key on press down (prevent multi-presses)
-	// on key-press, check correctness if running, reset if paused
-	always@(posedge inp, negedge inp, posedge reset) begin
-		// enable the key on key up
-		if (!inp) begin
-			keyenable = 1;
-		end
-		
-		if (keyenable & running) begin
-			keyenable = 0; // disable key since key not released yet
-			if (lane[0] == 1'b1) begin
-				// correct input, increment score by 1
-				score = score + 1;
-			end	else begin
-				// incorrect, subtract 2 from score, maintain positive
-				if (score == 5'd0 | score == 5'd1)
-					// cannot subtract 2, simply set to 0
-					score = 5'd0;
-				else
-					// can subtract 2, do it
-					score = score - 2;
-			end			
-		end
-		
-		// reset the score
-		if (reset) begin
-			score = 5'd0;
-		end
-	end
-endmodule
-
-// module controls the speed of the notes
-module note_rate_div(clk, rate, reset, out_clk);
-	input clk;
-	input [25:0] rate;
-	input reset;
-	output reg out_clk;
-	
-	// count to given rate 
+	// count to 50 million for 1Hz ( for moving notes along lane )
+	reg [25:0] rate_max = 26'd9000000;
 	reg [25:0] curr_count = 26'b0;
-	out_clk = 0; // the signal
 	
+	reg clk_out = 1'b0; // the 1hz signal
 	always @(posedge clk) begin
-		if (reset) begin
-			// do nothing in reset mode
-			curr_count <= 0;
-			out_clk <= 0;
-		end else begin
-			curr_count <= curr_count + 1;
-			if (curr_count == rate) begin
+		curr_count <= curr_count + 1;
+		if(curr_count == rate_max)
+			begin
 				curr_count <= 0;
-				// pulse out if not in reset mode
-				out_clk <= !out_clk;
+				clk_out <= !clk_out;
+			end	
+			
+		if (running) begin 
+			if (increment_score) begin
+				score0 <= score0 + 1;
 			end
+			
+			if (decrement_score) begin
+				score0 <= score0 - 1;
+				
+			end
+		end else begin
+			score0 <= 5'd0;
+			
 		end
 	end
+	
+//	reg doneinc = 1'b1;
+//	reg donedec = 1'b1;
+	
+//	always@(posedge increment_score) begin
+//		increment_score <= 1'b0;
+//	end
+//	
+	
+	always@(posedge clk_out) begin
+		if (running) begin
+			lane <= lane >> 1;
+		end else begin
+			lane <= lane_mem;
+		end
+	
+	end
+	
+
+	
+	reg increment_score;
+	reg decrement_score;
+	
+
+		
+	always@(posedge l1_inp)
+		begin
+
+			if (lane[0] == 1'b1)
+				begin
+					decrement_score <= 1'b0;
+					increment_score <= 1'b1;
+					increment_score <= 1'b0;
+				end
+			else
+				begin
+					decrement_score <= 1'b1;
+					increment_score <= 1'b0;
+					decrement_score <= 1'b0;
+					
+						
+				end
+		
+		end
+
+
 endmodule
 
 // module for displaying 5 bit score (max is 31)
-module score_display(score, HEXA, HEXB);
+module score_display(score, OUT1, OUT2);
 	input [4:0] score;
-    output reg [7:0] HEXA, HEXB;
+    output reg [7:0] OUT1, OUT2;
      
      always @(*)
      begin
