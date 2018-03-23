@@ -1,3 +1,4 @@
+// a rendition of Tap Tap Revenge on DE2-115 using Verilog.
 module UTT(CLOCK_50,
 	SW,
 	LEDR, 
@@ -59,7 +60,6 @@ module UTT(CLOCK_50,
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
 		defparam VGA.BACKGROUND_IMAGE = "background.mif";
-		
 	
 	// score keeping
 	reg [4:0] score;
@@ -146,9 +146,11 @@ module datapath(
 	input resetn;
 	input running;
 	
-	
+	// flag used to prevent over cycling of the lane on FSM clock
+	reg shifted = 1'b0;
 	// keep track of current state
 	reg [4:0] currs;
+	
 	// the FSM
 	always@(posedge clk) begin
 		if (resetn) begin
@@ -160,6 +162,7 @@ module datapath(
 			5'd0: begin // reset state (begin)
 				score <= 5'd0;			
 				lane1 <= lane1_mem;
+				shifted <= 1'b0;
 				// if running, then start, else, stay here
 				if (running) begin
 					currs <= 5'd1; // go to start state
@@ -167,10 +170,17 @@ module datapath(
 			end
 			5'd1: begin	// move lane on lane clock (wait for it)
 				if (lane_clk) begin
-					// move lane only on lane clock
-					lane1 <= lane1 >> 1;
-					currs <= 5'd2; // go to next state
-				end		
+					// if not shifted once, shift
+					if (!shifted) begin
+						shifted <= 1'b1;
+						// move lane only on lane clock
+						lane1 <= lane1 >> 1;
+						currs <= 5'd2; // go to next state
+					end
+				end else begin
+					// reset shifted on the down edge
+					shifted <= 1'b0;
+				end
 			end
 			5'd2: begin	// check for input 
 				if (lane1_press & lane[0]) begin
