@@ -72,8 +72,8 @@ module UTT(CLOCK_50,
 	reg [25:0] lane_rate;
 	reg lane_clk; // clock for the lane
 	// lane memory
-	reg [25:0] lane1_mem = 26'b00000100000100101000100010;
-	reg [25:0] lane1; // copied to from memory
+	reg [499:0] lane1_mem = 500'00000000000000000000000001000100100000000000010000000000000000000000000000000100000000000000000000000000000001000000000000000000010000000000000000000000000000000000000000000001000000000000000000000100000000000000000000000001000000000010000000010000000001000000000000100000000000000100000000000000100000000000000000000100010000000000000100000000001000000010000000000000000000000001000000000000000010000000001000000000100010000000000000001000000000000100001010000000010000000000001000100000001000000000;
+	reg [499:0] lane1; // copied to from memory
 	// reset key
 	wire resetn;
 	assign resetn = KEY[0];
@@ -148,6 +148,8 @@ module datapath(
 	
 	// flag used to prevent over cycling of the lane on FSM clock
 	reg shifted = 1'b0;
+	// flag used to prevent double pressing for score
+	reg pressed = 1'b0;
 	// keep track of current state
 	reg [4:0] currs;
 	
@@ -183,18 +185,28 @@ module datapath(
 				end
 			end
 			5'd2: begin	// check for input 
-				if (lane1_press & lane[0]) begin
-					// press was correct increment score
-					score <= score + 1;
-				end else begin
-					// press was wrong, decrement sore
-					if (score == 5'd0) begin
-						score <= 5'd0;
-					end else begin
-						score <= score - 1;
+				// only do this while the clock is still down and button was not pressed before
+				if (!lane_clk & !pressed) begin
+					// wait until a press
+					if (lane1_press) begin
+						pressed <= 1'b1; // mark the press, so no double pressing
+
+						if (lane[0]) begin
+							// press was correct
+							score <= score + 1;
+						end else begin
+							// press was incorrect
+							
+							if (score != 5'd0) begin
+								score <= score - 1;
+							end
+						end
 					end
+				end else begin
+					// when the lane clock rises again, or button pressed time to stop checking for presses
+					currs <= 5'd1;
 				end
-				currs <= 5'd1; // go to next state
+		
 			end
 		endcase
 	end
