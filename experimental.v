@@ -153,7 +153,7 @@ module datapath(
 	// keep track of current state
 	reg [4:0] currs;
 	
-	// the FSM
+	// the FSM inspired by https://github.com/nathan78906/CaveCatchers/blob/master/cavecatchers.v
 	always@(posedge clk) begin
 		if (resetn) begin
 			// reset the game, go to reset state
@@ -196,7 +196,7 @@ module datapath(
 							score <= score + 1;
 						end else begin
 							// press was incorrect
-							
+
 							if (score != 5'd0) begin
 								score <= score - 1;
 							end
@@ -375,4 +375,69 @@ module hex_display(IN, OUT);
 		endcase
 
 	end
+endmodule
+
+// given a score of at most 999, split into 3 digits for easy displaying onto HEX. Reset is positive edge.
+module split_digits(score, digit1, digit2, digit3, clk, reset);
+
+	input [9:0] score; // 0 - 999
+	output [3:0] digit1; // 0 - 9
+	output [3:0] digit2; // 0 - 9
+	output [3:0] digit3; // 0 - 9
+	input clk; // clock
+	input reset; // reset the display for new score
+
+
+	reg [9:0] copy_score; // copied score for decrementing
+
+	reg started = 1'b0;
+	reg running = 1'b1; // running until number reached
+
+	always@(posedge clk, posedge resetn) begin
+
+		if (resetn) begin
+			running <= 1'b1;
+			started <= 1'b0;
+		end
+
+		if (running) begin
+			if (!started) begin
+				started <= 1'b1;
+				// initialization
+				copy_score <= score; // copy the score
+				digit1 <= 4'd0;
+				digit2 <= 4'd0;
+				digit3 <= 4'd0;
+			end else begin
+				// every loop except init
+				copy_score <= copy_score - 1;
+				if (copy_score == 10'd0) begin
+					running <= 1'b0;
+				end
+
+				digit1 <= digit1 + 1; // increment digit 1
+
+				if (digit1 == 4'd10) begin
+					// increment digit 2
+					digit1 <= 4'd0;
+					digit2 <= digit2 + 1;
+				end
+
+				if (digit2 == 4'd10) begin
+					// increment digit 3
+					digit2 <= 4'd0;
+					digit3 <= digit3 + 1;
+				end
+
+				if (digit3 == 4'd10) begin
+					// more than 999, reset
+					digit3 <= 4'd0;
+					digit2 <= 4'd0;
+					digit1 <= 4'd0;
+				end
+			end
+		end
+	end
+
+
 endmodule
