@@ -71,8 +71,6 @@ module UTT(
 	wire lane1_press;
 	assign lane1_press = !GPIO[0];
 	// speed control
-//	reg [1:0] speed;
-//	assign speed = SW[17:16];
 	wire [25:0] lane_rate;
 	wire lane_clk; // clock for the lane
 	// lane memory
