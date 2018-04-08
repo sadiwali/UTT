@@ -1,6 +1,6 @@
 // a rendition of Tap Tap Revenge on DE2-115 using Verilog.
 
-module UTT(
+module FinalProj(
 	CLOCK_50,
 	SW,
 	LEDR, 
@@ -41,29 +41,6 @@ module UTT(
 	wire [7:0] y;
 	wire writeEn;
 
-	// Create an Instance of a VGA controller - there can be only one!
-	// Define the number of colours as well as the initial ground
-	// image file (.MIF) for the controller.
-	vga_adapter VGA(
-			.resetn(resetn),
-			.clock(CLOCK_50),
-			.colour(colour),
-			.x(x),
-			.y(y),
-			.plot(1'b1),
-			/* Signals for the DAC to drive the monitor. */
-			.VGA_R(VGA_R),
-			.VGA_G(VGA_G),
-			.VGA_B(VGA_B),
-			.VGA_HS(VGA_HS),
-			.VGA_VS(VGA_VS),
-			.VGA_BLANK(VGA_BLANK_N),
-			.VGA_SYNC(VGA_SYNC_N),
-			.VGA_CLK(VGA_CLK));
-		defparam VGA.RESOLUTION = "160x120";
-		defparam VGA.MONOCHROME = "FALSE";
-		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 	
 	// score keeping
 	wire [4:0] score;
